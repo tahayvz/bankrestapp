@@ -11,6 +11,4 @@ public class BranchNameDetails {
 
     private String branchName;
 
-//    private CustomerDetails customerDetails;
-
 }

@@ -1,0 +1,268 @@
+package com.tahayavuz.bankrestapp.service;
+
+
+import com.tahayavuz.bankrestapp.domain.*;
+import com.tahayavuz.bankrestapp.model.*;
+import com.tahayavuz.bankrestapp.repository.*;
+import com.tahayavuz.bankrestapp.service.helper.BankingServiceHelper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+@Transactional
+public class BankingServiceImpl implements BankingService {
+
+    @Autowired
+    private BranchNameRepository branchNameRepository;
+    @Autowired
+    private BranchCodeRepository branchCodeRepository;
+    @Autowired
+    private CustomerRepository customerRepository;
+    @Autowired
+    private AccountRepository accountRepository;
+    @Autowired
+    private TransactionRepository transactionRepository;
+    @Autowired
+    private CustomerAccountXRefRepository custAccXRefRepository;
+    @Autowired
+    private BankingServiceHelper bankingServiceHelper;
+
+    public BankingServiceImpl(CustomerRepository repository) {
+        this.customerRepository = repository;
+    }
+
+
+    public List<BranchNameDetails> findAllBranchName() {
+
+        List<BranchNameDetails> allBranchNameDetails = new ArrayList<>();
+
+        Iterable<BranchName> branchNameList = branchNameRepository.findAll();
+
+        branchNameList.forEach(branchName -> {
+            allBranchNameDetails.add(bankingServiceHelper.convertToBranchNameDomain(branchName));
+        });
+
+        return allBranchNameDetails;
+    }
+
+    public List<CustomerDetails> findAllCustomersFromBranchCode(String byBranchCode) {
+
+        List<CustomerDetails> allCustomerDetails = new ArrayList<>();
+
+        Iterable<Customer> customerList = customerRepository.findAll();
+
+        customerList.forEach(customer -> {
+            if (customer.getCustomerBranchCode().getBranchCode().equals(byBranchCode)) {
+                allCustomerDetails.add(bankingServiceHelper.convertToCustomerDomain(customer));
+            }
+        });
+        return allCustomerDetails;
+    }
+
+    public List<CustomerDetails> findAllCustomersFromBranchName(String byBranchName) {
+
+        List<CustomerDetails> allCustomerDetails = new ArrayList<>();
+
+        Iterable<Customer> customerList = customerRepository.findAll();
+
+        customerList.forEach(customer -> {
+            String branchName = customer.getCustomerBranchName().getBranchName();
+            String s = branchName.substring(0, branchName.indexOf('/'));
+            if (s.equals(byBranchName)) {
+                allCustomerDetails.add(bankingServiceHelper.convertToCustomerDomain(customer));
+            }
+        });
+        return allCustomerDetails;
+    }
+
+    public List<CustomerDetails> findAll() {
+
+        List<CustomerDetails> allCustomerDetails = new ArrayList<>();
+
+        Iterable<Customer> customerList = customerRepository.findAll();
+
+        customerList.forEach(customer -> {
+            allCustomerDetails.add(bankingServiceHelper.convertToCustomerDomain(customer));
+        });
+
+        return allCustomerDetails;
+    }
+
+    public ResponseEntity<Object> addCustomer(CustomerDetails customerDetails) {
+
+        Customer customer = bankingServiceHelper.convertToCustomerEntity(customerDetails);
+        customer.setCreateDateTime(new Date());
+        customerRepository.save(customer);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body("New Customer created successfully.");
+    }
+
+    public CustomerDetails findByCustomerNumber(Long customerNumber) {
+
+        Optional<Customer> customerEntityOpt = customerRepository.findByCustomerNumber(customerNumber);
+
+        return bankingServiceHelper.convertToCustomerDomain(customerEntityOpt.get());
+    }
+
+    public ResponseEntity<Object> updateCustomer(CustomerDetails customerDetails, Long customerNumber) {
+        Optional<Customer> managedCustomerEntityOpt = customerRepository.findByCustomerNumber(customerNumber);
+        Customer unmanagedCustomerEntity = bankingServiceHelper.convertToCustomerEntity(customerDetails);
+        if (managedCustomerEntityOpt.isPresent()) {
+            Customer managedCustomerEntity = managedCustomerEntityOpt.get();
+
+            if (Optional.ofNullable(unmanagedCustomerEntity.getContactDetails()).isPresent()) {
+
+                Contact managedContact = managedCustomerEntity.getContactDetails();
+                if (managedContact != null) {
+                    managedContact.setEmailId(unmanagedCustomerEntity.getContactDetails().getEmailId());
+                    managedContact.setHomePhone(unmanagedCustomerEntity.getContactDetails().getHomePhone());
+                    managedContact.setWorkPhone(unmanagedCustomerEntity.getContactDetails().getWorkPhone());
+                } else
+                    managedCustomerEntity.setContactDetails(unmanagedCustomerEntity.getContactDetails());
+            }
+
+            if (Optional.ofNullable(unmanagedCustomerEntity.getCustomerAddress()).isPresent()) {
+
+                Address managedAddress = managedCustomerEntity.getCustomerAddress();
+                if (managedAddress != null) {
+                    managedAddress.setAddress1(unmanagedCustomerEntity.getCustomerAddress().getAddress1());
+                    managedAddress.setAddress2(unmanagedCustomerEntity.getCustomerAddress().getAddress2());
+                    managedAddress.setCity(unmanagedCustomerEntity.getCustomerAddress().getCity());
+                    managedAddress.setState(unmanagedCustomerEntity.getCustomerAddress().getState());
+                    managedAddress.setZip(unmanagedCustomerEntity.getCustomerAddress().getZip());
+                    managedAddress.setCountry(unmanagedCustomerEntity.getCustomerAddress().getCountry());
+                } else
+                    managedCustomerEntity.setCustomerAddress(unmanagedCustomerEntity.getCustomerAddress());
+            }
+
+            managedCustomerEntity.setUpdateDateTime(new Date());
+            managedCustomerEntity.setStatus(unmanagedCustomerEntity.getStatus());
+            managedCustomerEntity.setFirstName(unmanagedCustomerEntity.getFirstName());
+            managedCustomerEntity.setMiddleName(unmanagedCustomerEntity.getMiddleName());
+            managedCustomerEntity.setLastName(unmanagedCustomerEntity.getLastName());
+            managedCustomerEntity.setUpdateDateTime(new Date());
+
+            customerRepository.save(managedCustomerEntity);
+
+            return ResponseEntity.status(HttpStatus.OK).body("Success: Customer updated.");
+        }
+        return null;
+    }
+
+    public ResponseEntity<Object> deleteCustomer(Long customerNumber) {
+
+        Optional<Customer> managedCustomerEntityOpt = customerRepository.findByCustomerNumber(customerNumber);
+
+        if (managedCustomerEntityOpt.isPresent()) {
+            Customer managedCustomerEntity = managedCustomerEntityOpt.get();
+            customerRepository.delete(managedCustomerEntity);
+            return ResponseEntity.status(HttpStatus.OK).body("Success: Customer deleted.");
+        }
+        return null;
+    }
+
+    public ResponseEntity<Object> findByAccountNumber(Long accountNumber) {
+
+        Optional<Account> accountEntityOpt = accountRepository.findByAccountNumber(accountNumber);
+
+        if (accountEntityOpt.isPresent()) {
+            return ResponseEntity.status(HttpStatus.FOUND).body(bankingServiceHelper.convertToAccountDomain(accountEntityOpt.get()));
+        }
+        return null;
+    }
+
+    public ResponseEntity<Object> addNewAccount(AccountInformation accountInformation, Long customerNumber) {
+
+        Optional<Customer> customerEntityOpt = customerRepository.findByCustomerNumber(customerNumber);
+
+        if (customerEntityOpt.isPresent()) {
+            Account account = bankingServiceHelper.convertToAccountEntity(accountInformation);
+            account.setCreateDateTime(new Date());
+            accountRepository.save(account);
+
+            // Add an entry to the CustomerAccountXRef
+            custAccXRefRepository.save(CustomerAccountXRef.builder()
+                    .accountNumber(accountInformation.getAccountNumber())
+                    .customerNumber(customerNumber)
+                    .build());
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body("New Account created successfully.");
+    }
+
+    public ResponseEntity<Object> transferDetails(TransferDetails transferDetails, Long customerNumber) {
+
+        List<Account> accountEntities = new ArrayList<>();
+        Account fromAccountEntity = null;
+        Account toAccountEntity = null;
+
+        Optional<Customer> customerEntityOpt = customerRepository.findByCustomerNumber(customerNumber);
+
+        if (customerEntityOpt.isPresent()) {
+
+            Optional<Account> fromAccountEntityOpt = accountRepository.findByAccountNumber(transferDetails.getFromAccountNumber());
+            if (fromAccountEntityOpt.isPresent()) {
+                fromAccountEntity = fromAccountEntityOpt.get();
+            }
+
+
+            Optional<Account> toAccountEntityOpt = accountRepository.findByAccountNumber(transferDetails.getToAccountNumber());
+            if (toAccountEntityOpt.isPresent()) {
+                toAccountEntity = toAccountEntityOpt.get();
+            }
+
+
+            if (fromAccountEntity.getAccountBalance() < transferDetails.getTransferAmount()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Insufficient Funds.");
+            } else {
+                synchronized (this) {
+                    fromAccountEntity.setAccountBalance(fromAccountEntity.getAccountBalance() - transferDetails.getTransferAmount());
+                    fromAccountEntity.setUpdateDateTime(new Date());
+                    accountEntities.add(fromAccountEntity);
+
+                    toAccountEntity.setAccountBalance(toAccountEntity.getAccountBalance() + transferDetails.getTransferAmount());
+                    toAccountEntity.setUpdateDateTime(new Date());
+                    accountEntities.add(toAccountEntity);
+
+                    accountRepository.saveAll(accountEntities);
+
+                    Transaction fromTransaction = bankingServiceHelper.createTransaction(transferDetails, fromAccountEntity.getAccountNumber(), "DEBIT");
+                    transactionRepository.save(fromTransaction);
+
+                    Transaction toTransaction = bankingServiceHelper.createTransaction(transferDetails, toAccountEntity.getAccountNumber(), "CREDIT");
+                    transactionRepository.save(toTransaction);
+                }
+
+                return ResponseEntity.status(HttpStatus.OK).body("Success: Amount transferred for Customer Number " + customerNumber);
+            }
+
+        }
+        return null;
+    }
+
+
+    public List<TransactionDetails> findTransactionsByAccountNumber(Long accountNumber) {
+        List<TransactionDetails> transactionDetails = new ArrayList<>();
+        Optional<Account> accountEntityOpt = accountRepository.findByAccountNumber(accountNumber);
+        if (accountEntityOpt.isPresent()) {
+            Optional<List<Transaction>> transactionEntitiesOpt = transactionRepository.findByAccountNumber(accountNumber);
+            if (transactionEntitiesOpt.isPresent()) {
+                transactionEntitiesOpt.get().forEach(transaction -> {
+                    transactionDetails.add(bankingServiceHelper.convertToTransactionDomain(transaction));
+                });
+            }
+        }
+
+        return transactionDetails;
+    }
+
+
+}
