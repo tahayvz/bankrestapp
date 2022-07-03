@@ -1,6 +1,7 @@
 package com.tahayavuz.bankrestapp.service;
 
 import com.tahayavuz.bankrestapp.domain.BranchNameDetails;
+import com.tahayavuz.bankrestapp.exception.ResourceNotFoundException;
 import com.tahayavuz.bankrestapp.model.BranchName;
 import com.tahayavuz.bankrestapp.repository.BranchNameRepository;
 import com.tahayavuz.bankrestapp.service.helper.BankingServiceHelper;
@@ -43,8 +44,9 @@ public class BankBranchNameServiceImpl implements BankBranchNameService {
 
         if (branchNameEntityOptional.isPresent()) {
             return ResponseEntity.status(HttpStatus.FOUND).body(bankingServiceHelper.convertToBranchNameDomain(branchNameEntityOptional.get()));
+        } else {
+            throw new ResourceNotFoundException("Branch Name not found. For Branch Name value: " + branchName);
         }
-        return null;
 
     }
 

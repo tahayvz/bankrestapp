@@ -2,6 +2,7 @@ package com.tahayavuz.bankrestapp.service;
 
 
 import com.tahayavuz.bankrestapp.domain.*;
+import com.tahayavuz.bankrestapp.exception.ResourceNotFoundException;
 import com.tahayavuz.bankrestapp.model.*;
 import com.tahayavuz.bankrestapp.repository.*;
 import com.tahayavuz.bankrestapp.service.helper.BankingServiceHelper;
@@ -62,6 +63,8 @@ public class BankingServiceImpl implements BankingService {
         customerList.forEach(customer -> {
             if (customer.getCustomerBranchCode().getBranchCode().equals(byBranchCode)) {
                 allCustomerDetails.add(bankingServiceHelper.convertToCustomerDomain(customer));
+            } else {
+                throw new ResourceNotFoundException("Customers not found. For Branch code value: " + byBranchCode);
             }
         });
         return allCustomerDetails;
@@ -78,6 +81,8 @@ public class BankingServiceImpl implements BankingService {
             String s = branchName.substring(0, branchName.indexOf('/'));
             if (s.equals(byBranchName)) {
                 allCustomerDetails.add(bankingServiceHelper.convertToCustomerDomain(customer));
+            } else {
+                throw new ResourceNotFoundException("Customers not found. For Branch name value: " + byBranchName);
             }
         });
         return allCustomerDetails;
@@ -108,6 +113,10 @@ public class BankingServiceImpl implements BankingService {
     public CustomerDetails findByCustomerNumber(Long customerNumber) {
 
         Optional<Customer> customerEntityOpt = customerRepository.findByCustomerNumber(customerNumber);
+
+        if (!customerEntityOpt.isPresent()) {
+            throw new ResourceNotFoundException("Customer not found. For Customer Number value: " + customerNumber.toString());
+        }
 
         return bankingServiceHelper.convertToCustomerDomain(customerEntityOpt.get());
     }
@@ -153,8 +162,9 @@ public class BankingServiceImpl implements BankingService {
             customerRepository.save(managedCustomerEntity);
 
             return ResponseEntity.status(HttpStatus.OK).body("Success: Customer updated.");
+        } else {
+            throw new ResourceNotFoundException("Customer not found. For Customer Number value: " + customerNumber.toString());
         }
-        return null;
     }
 
     public ResponseEntity<Object> deleteCustomer(Long customerNumber) {
@@ -165,8 +175,11 @@ public class BankingServiceImpl implements BankingService {
             Customer managedCustomerEntity = managedCustomerEntityOpt.get();
             customerRepository.delete(managedCustomerEntity);
             return ResponseEntity.status(HttpStatus.OK).body("Success: Customer deleted.");
+        } else {
+            throw new ResourceNotFoundException("Customer not found. For Customer Number value: " + customerNumber.toString());
         }
-        return null;
+
+        //TODO: Delete all customer entries from CustomerAccountXRef
     }
 
     public ResponseEntity<Object> findByAccountNumber(Long accountNumber) {
@@ -175,8 +188,10 @@ public class BankingServiceImpl implements BankingService {
 
         if (accountEntityOpt.isPresent()) {
             return ResponseEntity.status(HttpStatus.FOUND).body(bankingServiceHelper.convertToAccountDomain(accountEntityOpt.get()));
+        } else {
+            throw new ResourceNotFoundException("Account not found. For Account Number value: " + accountNumber.toString());
         }
-        return null;
+
     }
 
     public ResponseEntity<Object> addNewAccount(AccountInformation accountInformation, Long customerNumber) {
@@ -211,12 +226,17 @@ public class BankingServiceImpl implements BankingService {
             Optional<Account> fromAccountEntityOpt = accountRepository.findByAccountNumber(transferDetails.getFromAccountNumber());
             if (fromAccountEntityOpt.isPresent()) {
                 fromAccountEntity = fromAccountEntityOpt.get();
+            } else {
+                throw new ResourceNotFoundException("From Account not found. For Account Number value: " + transferDetails.getFromAccountNumber());
+
             }
 
 
             Optional<Account> toAccountEntityOpt = accountRepository.findByAccountNumber(transferDetails.getToAccountNumber());
             if (toAccountEntityOpt.isPresent()) {
                 toAccountEntity = toAccountEntityOpt.get();
+            } else {
+                throw new ResourceNotFoundException("To Account not found. For Account Number value: " + transferDetails.getToAccountNumber());
             }
 
 
@@ -244,8 +264,10 @@ public class BankingServiceImpl implements BankingService {
                 return ResponseEntity.status(HttpStatus.OK).body("Success: Amount transferred for Customer Number " + customerNumber);
             }
 
+        } else {
+            throw new ResourceNotFoundException("Customer not found. For Customer Number value: " + customerNumber.toString());
         }
-        return null;
+
     }
 
 
