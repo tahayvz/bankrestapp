@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface BranchNameRepository extends CrudRepository<BranchName, String> {
+public interface BranchNameRepository extends CrudRepository<BranchName, Long> {
     Optional<BranchName> findByBranchName(String branchName);
 
 }

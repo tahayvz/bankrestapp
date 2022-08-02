@@ -8,6 +8,7 @@ import lombok.*;
 @Setter
 @Builder
 public class CustomerDetails {
+    private Long id;
 
     private String firstName;
     
@@ -23,8 +24,12 @@ public class CustomerDetails {
     
     private ContactDetails contactDetails;
 
-    private BranchNameDetails customerBranchName;
+//    private BranchNameDetails branchNameDetails;
+//
+//    private BranchCodeDetails branchCodeDetails;
+//bunları dene customer get yapmak için ingredient bu şekilde sadece recipeId ile çağrılmış...    recursiın olmaz...
+    private long branchNameId;
 
-    private BranchCodeDetails customerBranchCode;
-    
+    private long branchCodeId;
+
 }

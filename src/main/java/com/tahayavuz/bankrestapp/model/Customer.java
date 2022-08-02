@@ -1,18 +1,17 @@
 package com.tahayavuz.bankrestapp.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.persistence.*;
 import java.util.Date;
 
 @Entity
-@Data
+@Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@EqualsAndHashCode
 public class Customer {
 
     @Id
@@ -36,12 +35,18 @@ public class Customer {
     @OneToOne(cascade=CascadeType.ALL)
     private Contact contactDetails;
 
-    @ManyToOne(cascade=CascadeType.ALL)
-    @JoinColumn (name="branch_code_id",referencedColumnName="BRANCH_CODE_ID",nullable=false,unique=true)
+//    @EqualsAndHashCode.Exclude
+
+    @ManyToOne
+
+//    @ManyToOne(cascade=CascadeType.ALL)
+//    @JoinColumn (name="branch_code_id",referencedColumnName="BRANCH_CODE_ID",nullable=false,unique=true)
     private BranchCode customerBranchCode;
 
-    @ManyToOne(cascade=CascadeType.ALL)
-    @JoinColumn (name="branch_name_id",referencedColumnName="BRANCH_NAME_ID",nullable=false,unique=true)
+    @EqualsAndHashCode.Exclude
+    @ManyToOne
+//    @ManyToOne(cascade=CascadeType.ALL)
+//    @JoinColumn (name="branch_name_id",referencedColumnName="BRANCH_NAME_ID",nullable=false,unique=true)
     private BranchName customerBranchName;
 
     @Temporal(TemporalType.TIME)

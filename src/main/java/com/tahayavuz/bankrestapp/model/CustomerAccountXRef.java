@@ -19,9 +19,9 @@ public class CustomerAccountXRef {
 	@GeneratedValue(strategy= GenerationType.AUTO)
 	@Column(name="CUST_ACC_XREF_ID")
 	private UUID id;
-	
+
 	private Long accountNumber;
-	
+
 	private Long customerNumber;
-	
+
 }

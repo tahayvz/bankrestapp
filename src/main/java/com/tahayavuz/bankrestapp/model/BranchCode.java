@@ -1,19 +1,19 @@
 package com.tahayavuz.bankrestapp.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.persistence.*;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @NoArgsConstructor
 @AllArgsConstructor
-@Data
 @Builder
 @Entity
-@Table(name="branch_code")
+@Getter
+@Setter
+@Table(name = "branch_code")
 public class BranchCode {
 
     @Id
@@ -24,5 +24,11 @@ public class BranchCode {
     private String branchCode;
 
     @OneToMany(mappedBy = "customerBranchCode", cascade = CascadeType.ALL)
-    private List<Customer> customer;
+    private Set<Customer> customer  = new HashSet<>();
+
+    public BranchCode addCustomer(Customer customer) {
+        customer.setCustomerBranchCode(this);
+        this.customer.add(customer);
+        return this;
+    }
 }

@@ -12,10 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @Transactional
@@ -103,10 +100,67 @@ public class BankingServiceImpl implements BankingService {
 
     public ResponseEntity<Object> addCustomer(CustomerDetails customerDetails) {
 
-        Customer customer = bankingServiceHelper.convertToCustomerEntity(customerDetails);
-        customer.setCreateDateTime(new Date());
-        customerRepository.save(customer);
+//        Optional<BranchCode> branchCodeOptional = branchCodeRepository.findById(customerDetails.getBranchCodeDetails().getId());
+        Optional<BranchCode> branchCodeOptional = branchCodeRepository.findById(customerDetails.getBranchCodeId());
+        Optional<BranchName> branchNameOptional = branchNameRepository.findById(customerDetails.getBranchNameId());
 
+        if (!branchCodeOptional.isPresent()) {
+            System.out.println("branchcode not found for: " + branchCodeOptional);
+        } else {
+            BranchCode branchCode = branchCodeOptional.get();
+            Optional<Customer> customerOptional = branchCode
+                    .getCustomer()
+                    .stream()
+                    .filter(customer -> customer.getId().equals(customerDetails.getId()))
+                    .findFirst();
+
+            BranchName branchName = branchNameOptional.get();
+            Optional<Customer> customerOptional2 = branchName
+                    .getCustomers()
+                    .stream()
+                    .filter(customer -> customer.getId().equals(customerDetails.getId()))
+                    .findFirst();
+
+            if (customerOptional.isPresent()) {
+                //update
+                Customer customerFound = customerOptional.get();
+                Address address = new Address();
+                address.setAddress1(customerDetails.getCustomerAddress().getAddress1());
+                address.setAddress2(customerDetails.getCustomerAddress().getAddress2());
+                address.setCity(customerDetails.getCustomerAddress().getCity());
+                address.setCountry(customerDetails.getCustomerAddress().getCountry());
+                address.setState(customerDetails.getCustomerAddress().getState());
+                address.setZip(customerDetails.getCustomerAddress().getZip());
+                customerFound.setCustomerAddress(address);
+            } else {
+                //add new customer
+                Customer customer = bankingServiceHelper.convertToCustomerEntity(customerDetails);
+                customer.setCreateDateTime(new Date());
+                branchCode.addCustomer(customer);
+                branchName.addCustomer(customer);
+
+                customerRepository.save(customer);
+            }
+            BranchCode savedBranchCode = branchCodeRepository.save(branchCode);
+            BranchName savedBranchName = branchNameRepository.save(branchName);
+
+            Optional<Customer> savedCustomerOptional = savedBranchCode.getCustomer().stream()
+                    .filter(branchCodeCustomers -> branchCodeCustomers.getId().equals(customerDetails.getId()))
+                    .findFirst();
+
+//            if(!savedCustomerOptional.isPresent()){
+//                //not totally safe... But best guess
+//                savedCustomerOptional = savedBranchCode.getCustomer().stream()
+//                        .filter(branchCodeCustomers -> branchCodeCustomers.getFirstName().equals(customerDetails.getFirstName()))
+//                        .filter(branchCodeCustomers -> branchCodeCustomers.getLastName().equals(customerDetails.getLastName()))
+//                        .filter(branchCodeCustomers -> branchCodeCustomers.getCustomerBranchCode().getId().equals(customerDetails.getBranchCodeId()))
+//                        .findFirst();
+//            }
+
+//            Customer customer = bankingServiceHelper.convertToCustomerEntity(customerDetails);
+//            customer.setCreateDateTime(new Date());
+//            customerRepository.save(customer);
+        }
         return ResponseEntity.status(HttpStatus.CREATED).body("New Customer created successfully.");
     }
 
@@ -134,8 +188,7 @@ public class BankingServiceImpl implements BankingService {
                     managedContact.setEmailId(unmanagedCustomerEntity.getContactDetails().getEmailId());
                     managedContact.setHomePhone(unmanagedCustomerEntity.getContactDetails().getHomePhone());
                     managedContact.setWorkPhone(unmanagedCustomerEntity.getContactDetails().getWorkPhone());
-                } else
-                    managedCustomerEntity.setContactDetails(unmanagedCustomerEntity.getContactDetails());
+                } else managedCustomerEntity.setContactDetails(unmanagedCustomerEntity.getContactDetails());
             }
 
             if (Optional.ofNullable(unmanagedCustomerEntity.getCustomerAddress()).isPresent()) {
@@ -148,8 +201,7 @@ public class BankingServiceImpl implements BankingService {
                     managedAddress.setState(unmanagedCustomerEntity.getCustomerAddress().getState());
                     managedAddress.setZip(unmanagedCustomerEntity.getCustomerAddress().getZip());
                     managedAddress.setCountry(unmanagedCustomerEntity.getCustomerAddress().getCountry());
-                } else
-                    managedCustomerEntity.setCustomerAddress(unmanagedCustomerEntity.getCustomerAddress());
+                } else managedCustomerEntity.setCustomerAddress(unmanagedCustomerEntity.getCustomerAddress());
             }
 
             managedCustomerEntity.setUpdateDateTime(new Date());
@@ -204,10 +256,7 @@ public class BankingServiceImpl implements BankingService {
             accountRepository.save(account);
 
             // Add an entry to the CustomerAccountXRef
-            custAccXRefRepository.save(CustomerAccountXRef.builder()
-                    .accountNumber(accountInformation.getAccountNumber())
-                    .customerNumber(customerNumber)
-                    .build());
+            custAccXRefRepository.save(CustomerAccountXRef.builder().accountNumber(accountInformation.getAccountNumber()).customerNumber(customerNumber).build());
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body("New Account created successfully.");
