@@ -1,9 +1,9 @@
 package com.tahayavuz.bankrestapp.bootstrap;
 
-import com.tahayavuz.bankrestapp.domain.BranchCodeDetails;
-import com.tahayavuz.bankrestapp.domain.BranchNameDetails;
-import com.tahayavuz.bankrestapp.service.BankBranchCodeService;
-import com.tahayavuz.bankrestapp.service.BankBranchNameService;
+import com.tahayavuz.bankrestapp.domains.BranchCodeDetails;
+import com.tahayavuz.bankrestapp.domains.BranchNameDetails;
+import com.tahayavuz.bankrestapp.services.BankBranchCodeService;
+import com.tahayavuz.bankrestapp.services.BankBranchNameService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
