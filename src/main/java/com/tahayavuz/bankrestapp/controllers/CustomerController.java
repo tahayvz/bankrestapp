@@ -1,7 +1,7 @@
 package com.tahayavuz.bankrestapp.controllers;
 
 import com.tahayavuz.bankrestapp.domains.CustomerDetails;
-import com.tahayavuz.bankrestapp.services.BankingServiceImpl;
+import com.tahayavuz.bankrestapp.services.BankingService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -17,8 +17,12 @@ import java.util.List;
 @Api(tags = { "Customer REST endpoints" })
 public class CustomerController {
 
+	public CustomerController(BankingService bankingService) {
+		this.bankingService = bankingService;
+	}
+
 	@Autowired
-	private BankingServiceImpl bankingService;
+	private final BankingService bankingService;
 
 	@GetMapping(path = "/all")
 	@ApiOperation(value = "Find all customers", notes = "Gets details of all the customers")
@@ -66,7 +70,7 @@ public class CustomerController {
 		return bankingService.updateCustomer(customerDetails, customerNumber);
 	}
 
-	@DeleteMapping(path = "/{customerNumber}")
+	@DeleteMapping(path = "/{customerNumber}/delete")
 	@ApiOperation(value = "Delete customer and related accounts", notes = "Delete customer and all accounts associated with him.")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Success", response = Object.class),
 			@ApiResponse(code = 400, message = "Bad Request"),
